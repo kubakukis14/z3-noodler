@@ -421,6 +421,160 @@ namespace smt::noodler {
                                                                         false, 
                                                                         {{"reduce", "forward"}});
 
+            STRACE("str", tout << "noodlecount: " << noodles.size() << std::endl;);
+            // STRACE("str", tout << "noodles:" << std::endl;);
+            // for (const auto &noodle : noodles) {
+            //     STRACE("str", tout << "noodle:" << std::endl;);
+            //     for (const auto &noodle_pair : noodle) {
+            //         STRACE("str", tout << noodle_pair.first.get()->print_to_mata() << std::endl;);
+            //     }
+            // }
+
+            /**
+             * The following code focuses on reducing the case split, created by the noodlification, as much as possible.
+             * The algorithm is based on inclusion checking between all produced noodles. The inclusions are processed
+             * on the level of separate bubbles that make the noodles up. First, we compare the right sides of the bubbles (the alignments),
+             * and if they get past, we check inclusions of their respective left sides (automata). The final product 
+             * is a distinct set of noodles, contained within the noodles vector.
+             */
+            std::vector<std::vector<std::pair<std::shared_ptr<mata::nfa::Nfa>, mata::strings::seg_nfa::VisitedEpsilonsCounterVector>>> newNoodles;
+            for (size_t i = 0; i < noodles.size(); i++){
+                // load the i-th noodle into variable udon
+                auto udon = noodles[i];
+                bool push_udon = true;
+                size_t newNoodles_size = newNoodles.size();
+                // loop through all variables inside the noodle
+                for (size_t j = 0; j < newNoodles_size; j++){
+                    auto soba = newNoodles[j];
+                    size_t l = 0;
+                    // Now the sizes of the udon.first and soba.first do not have to be the same so how do we compare them?
+                    size_t bubble_count = udon.size() < soba.size() ? udon.size() : soba.size();
+                    bool soba_larger = udon.size() < soba.size() ? true : false;
+                    auto smaller_nood = udon.size() < soba.size() ? udon : soba;
+                    auto bigger_nood = udon.size() > soba.size() ? udon : soba;
+                    bool skipped_noodle = false;
+                    bool deletion_time_udon = false;
+                    bool deletion_time_soba = false;
+
+                    // based on these two flags, we later decide about the deletion of the noodle
+                    bool udon_is_smaller = true;
+                    bool soba_is_smaller = true;
+                    for (size_t k = 0; k < bubble_count; k++){
+
+                        // In case of alignment mismatches, we try to catch up with the smaller noodle 
+                        // if there are epsilons language automata. If there are none, or the bigger noodle overtakes 
+                        // the smaller one, we can skip checking inclusions on the noodle and push it.
+                        while ((smaller_nood[k].second != bigger_nood[l].second) && (l < bigger_nood.size())){
+                            if (!(bigger_nood[l].first->final == bigger_nood[l].first->initial)) {
+                                STRACE("str", tout << "skipping inclusion" << std::endl;);
+                                skipped_noodle = true;
+                                break;
+                            }
+
+                            l++;
+
+                            if  ((bigger_nood[l].second[0] > smaller_nood[k].second[0]) ||
+                                 (bigger_nood[l].second[1] > smaller_nood[k].second[1])) {
+                                STRACE("str", tout << "skipping inclusion" << std::endl;);
+                                skipped_noodle = true;
+                                break;
+                            }
+                        }
+
+                        if (skipped_noodle){
+                            break;
+                        }
+
+                        // helper pointers to the right and left variable sides
+                        std::vector<unsigned int> soba_right_side;
+                        std::vector<unsigned int> udon_right_side;
+                        std::shared_ptr<mata::nfa::Nfa> soba_first;
+                        std::shared_ptr<mata::nfa::Nfa> udon_first;
+
+                        if (soba_larger){
+                            soba_right_side = soba[l].second;
+                            udon_right_side = udon[k].second;
+                            soba_first = soba[l].first;
+                            udon_first = udon[k].first;
+                        } else {
+                            soba_right_side = soba[k].second;
+                            udon_right_side = udon[l].second;
+                            soba_first = soba[k].first;
+                            udon_first = udon[l].first;
+                        }
+
+
+                        // if alignments match, we can compare the automata
+                        if (udon_right_side == soba_right_side){
+                            // the right sides are the same, we can call is_included
+                            bool udon_in_soba = mata::nfa::is_included(*udon_first, *soba_first);
+                            bool soba_in_udon = mata::nfa::is_included(*soba_first, *udon_first);
+                            if (udon_in_soba && soba_in_udon){
+                                STRACE("str", tout << "soba variable is the same as udon" << std::endl;);
+                            }
+                            else if (udon_in_soba){
+                                // udon is smaller, soba is eaten
+                                soba_is_smaller = false;
+                                STRACE("str", tout << "udon variable is smaller than soba" << std::endl;);
+                            } else if (soba_in_udon){
+                                // soba is smaller, udon is eaten
+                                udon_is_smaller = false;
+                                STRACE("str", tout << "soba variable is smaller than udon" << std::endl;);
+                            } else {
+                                // they are not the same, we can push it to newNoodles
+                                STRACE("str", tout << "soba and udon are not the same" << std::endl;);
+                                break;
+                            }
+                        }
+
+                        // at the end of the noodle, we can decide if we keep the noodle or not
+                        if (k == bubble_count-1) {
+                            if (udon_is_smaller && soba_is_smaller){
+                                // both noodles are completely the same, we can delete one
+                                deletion_time_udon = true;
+                                STRACE("str", tout << "soba and udon are the same -> eaten" << std::endl;);
+                                break;
+                            } else if (udon_is_smaller){
+                                // udon is smaller, soba is eaten
+                                deletion_time_udon = true;
+                                STRACE("str", tout << "udon is smaller -> eaten" << std::endl;);
+                                break;
+                            } else if (soba_is_smaller){
+                                // soba is smaller, udon is eaten
+                                deletion_time_soba = true;
+                                STRACE("str", tout << "soba is smaller -> eaten" << std::endl;);
+                                break;
+                            }
+                        }
+                        l++;
+                    }
+
+                    // if the udon is smaller, we dont have to push it to newNoodles so we can continue
+                    if (deletion_time_udon){
+                        push_udon = false;
+                        break;
+                    }
+                    // if the soba is smaller, we can delete it from newNoodles and resize the newNoodles
+                    if (deletion_time_soba){
+                        newNoodles.erase(newNoodles.begin() + j);
+                    }
+                }
+
+                // We can push it to newNoodles?
+                if (push_udon) {
+                    newNoodles.push_back(udon);
+                }
+            }
+            noodles = newNoodles;
+            STRACE("str", tout << "noodlecount: " << noodles.size() << std::endl;);
+            // STRACE("str", tout << "noodles:" << std::endl;);
+            // for (const auto &noodle : noodles) {
+            //     STRACE("str", tout << "noodle:" << std::endl;);
+            //     for (const auto &noodle_pair : noodle) {
+            //         STRACE("str", tout << noodle_pair.first.get()->print_to_mata() << std::endl;);
+            //     }
+            // }
+
             for (const auto &noodle : noodles) {
                 STRACE("str", tout << "Processing noodle" << (is_trace_enabled("str-nfa") ? " with automata:" : "") << std::endl;);
                 SolvingState new_element = element_to_process;
