@@ -426,6 +426,9 @@ namespace smt::noodler {
             // for (const auto &noodle : noodles) {
             //     STRACE("str", tout << "noodle:" << std::endl;);
             //     for (const auto &noodle_pair : noodle) {
+            //         for (const auto &noodle_pair_pair : noodle_pair.second) {
+            //             STRACE("str", tout << noodle_pair_pair << std::endl;);
+            //         }
             //         STRACE("str", tout << noodle_pair.first.get()->print_to_mata() << std::endl;);
             //     }
             // }
@@ -451,7 +454,7 @@ namespace smt::noodler {
                     size_t bubble_count = udon.size() < soba.size() ? udon.size() : soba.size();
                     bool soba_larger = udon.size() < soba.size() ? true : false;
                     auto smaller_nood = udon.size() < soba.size() ? udon : soba;
-                    auto bigger_nood = udon.size() > soba.size() ? udon : soba;
+                    auto bigger_nood = udon.size() >= soba.size() ? udon : soba;
                     bool skipped_noodle = false;
                     bool deletion_time_udon = false;
                     bool deletion_time_soba = false;
@@ -571,6 +574,9 @@ namespace smt::noodler {
             // for (const auto &noodle : noodles) {
             //     STRACE("str", tout << "noodle:" << std::endl;);
             //     for (const auto &noodle_pair : noodle) {
+            //         for (const auto &noodle_pair_pair : noodle_pair.second) {
+            //             STRACE("str", tout << noodle_pair_pair << std::endl;);
+            //         }
             //         STRACE("str", tout << noodle_pair.first.get()->print_to_mata() << std::endl;);
             //     }
             // }
