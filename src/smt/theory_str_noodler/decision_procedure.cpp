@@ -422,16 +422,16 @@ namespace smt::noodler {
                                                                         {{"reduce", "forward"}});
 
             STRACE("str", tout << "noodlecount: " << noodles.size() << std::endl;);
-            STRACE("str", tout << "noodles:" << std::endl;);
-            for (const auto &noodle : noodles) {
-                STRACE("str", tout << "noodle:" << std::endl;);
-                for (const auto &noodle_pair : noodle) {
-                    for (const auto &noodle_pair_pair : noodle_pair.second) {
-                        STRACE("str", tout << noodle_pair_pair << std::endl;);
-                    }
-                    STRACE("str", tout << noodle_pair.first.get()->print_to_mata() << std::endl;);
-                }
-            }
+            // STRACE("str", tout << "noodles:" << std::endl;);
+            // for (const auto &noodle : noodles) {
+            //     STRACE("str", tout << "noodle:" << std::endl;);
+            //     for (const auto &noodle_pair : noodle) {
+            //         for (const auto &noodle_pair_pair : noodle_pair.second) {
+            //             STRACE("str", tout << noodle_pair_pair << std::endl;);
+            //         }
+            //         STRACE("str", tout << noodle_pair.first.get()->print_to_mata() << std::endl;);
+            //     }
+            // }
 
             /**
              * The following code focuses on reducing the case split, created by the noodlification, as much as possible.
@@ -440,15 +440,12 @@ namespace smt::noodler {
              * and if they get past, we check inclusions of their respective left sides (automata). The final product 
              * is a distinct set of noodles, contained within the noodles vector.
              */
-            std::vector<std::vector<std::pair<std::shared_ptr<mata::nfa::Nfa>, mata::strings::seg_nfa::VisitedEpsilonsCounterVector>>> newNoodles;
-            for (size_t i = 0; i < noodles.size(); i++){
+            for (size_t stopper = 0; stopper < noodles.size(); stopper++){
                 // load the i-th noodle into variable udon
-                auto udon = noodles[i];
-                bool push_udon = true;
-                size_t newNoodles_size = newNoodles.size();
+                auto udon = noodles[stopper];
                 // loop through all variables inside the noodle
-                for (size_t j = 0; j < newNoodles_size; j++){
-                    auto soba = newNoodles[j];
+                for (size_t j = 0; j < stopper; j++){
+                    auto soba = noodles[j];
                     size_t l = 0;
                     // Now the sizes of the udon.first and soba.first do not have to be the same so how do we compare them?
                     size_t bubble_count = udon.size() < soba.size() ? udon.size() : soba.size();
@@ -456,8 +453,6 @@ namespace smt::noodler {
                     auto smaller_nood = udon.size() < soba.size() ? udon : soba;
                     auto bigger_nood = udon.size() >= soba.size() ? udon : soba;
                     bool skipped_noodle = false;
-                    bool deletion_time_udon = false;
-                    bool deletion_time_soba = false;
 
                     // based on these two flags, we later decide about the deletion of the noodle
                     bool udon_is_smaller = true;
@@ -541,59 +536,48 @@ namespace smt::noodler {
 
                     if (l != bigger_nood.size() - 1) {
                         STRACE("str", tout << "magicky skip" << std::endl;);
-                        break;
+                        continue;
                     }
 
                     if (udon_is_smaller && soba_is_smaller){
                         // both noodles are completely the same, we can delete one
                         if (soba_larger){
-                            deletion_time_udon = true;
+                            noodles.erase(noodles.begin() + stopper);
+                            stopper--;
+                            break;
                         } else {
-                            deletion_time_soba = true;
+                            noodles.erase(noodles.begin() + j);
+                            j--;
+                            stopper--;
                         }
 
                         STRACE("str", tout << "soba and udon are the same -> eaten" << std::endl;);
-                        break;
                     } else if (udon_is_smaller){
                         // udon is smaller, soba is eaten
-                        deletion_time_udon = true;
-                        STRACE("str", tout << "udon is smaller -> eaten" << std::endl;);
+                        noodles.erase(noodles.begin() + stopper);
+                        stopper--;
                         break;
+                        STRACE("str", tout << "udon is smaller -> eaten" << std::endl;);
                     } else if (soba_is_smaller){
                         // soba is smaller, udon is eaten
-                        deletion_time_soba = true;
+                        noodles.erase(noodles.begin() + j);
+                        j--;
+                        stopper--;
                         STRACE("str", tout << "soba is smaller -> eaten" << std::endl;);
-                        break;
                     }
-
-                    // if the udon is smaller, we dont have to push it to newNoodles so we can continue
-                    if (deletion_time_udon){
-                        push_udon = false;
-                        break;
-                    }
-                    // if the soba is smaller, we can delete it from newNoodles and resize the newNoodles
-                    if (deletion_time_soba){
-                        newNoodles.erase(newNoodles.begin() + j);
-                    }
-                }
-
-                // We can push it to newNoodles?
-                if (push_udon) {
-                    newNoodles.push_back(udon);
                 }
             }
-            noodles = newNoodles;
             STRACE("str", tout << "noodlecount: " << noodles.size() << std::endl;);
-            STRACE("str", tout << "noodles:" << std::endl;);
-            for (const auto &noodle : noodles) {
-                STRACE("str", tout << "noodle:" << std::endl;);
-                for (const auto &noodle_pair : noodle) {
-                    for (const auto &noodle_pair_pair : noodle_pair.second) {
-                        STRACE("str", tout << noodle_pair_pair << std::endl;);
-                    }
-                    STRACE("str", tout << noodle_pair.first.get()->print_to_mata() << std::endl;);
-                }
-            }
+            // STRACE("str", tout << "noodles:" << std::endl;);
+            // for (const auto &noodle : noodles) {
+            //     STRACE("str", tout << "noodle:" << std::endl;);
+            //     for (const auto &noodle_pair : noodle) {
+            //         for (const auto &noodle_pair_pair : noodle_pair.second) {
+            //             STRACE("str", tout << noodle_pair_pair << std::endl;);
+            //         }
+            //         STRACE("str", tout << noodle_pair.first.get()->print_to_mata() << std::endl;);
+            //     }
+            // }
 
             for (const auto &noodle : noodles) {
                 STRACE("str", tout << "Processing noodle" << (is_trace_enabled("str-nfa") ? " with automata:" : "") << std::endl;);
