@@ -422,16 +422,16 @@ namespace smt::noodler {
                                                                         {{"reduce", "forward"}});
 
             STRACE("str", tout << "noodlecount: " << noodles.size() << std::endl;);
-            // STRACE("str", tout << "noodles:" << std::endl;);
-            // for (const auto &noodle : noodles) {
-            //     STRACE("str", tout << "noodle:" << std::endl;);
-            //     for (const auto &noodle_pair : noodle) {
-            //         for (const auto &noodle_pair_pair : noodle_pair.second) {
-            //             STRACE("str", tout << noodle_pair_pair << std::endl;);
-            //         }
-            //         STRACE("str", tout << noodle_pair.first.get()->print_to_mata() << std::endl;);
-            //     }
-            // }
+            STRACE("str", tout << "noodles:" << std::endl;);
+            for (const auto &noodle : noodles) {
+                STRACE("str", tout << "noodle:" << std::endl;);
+                for (const auto &noodle_pair : noodle) {
+                    for (const auto &noodle_pair_pair : noodle_pair.second) {
+                        STRACE("str", tout << noodle_pair_pair << std::endl;);
+                    }
+                    STRACE("str", tout << noodle_pair.first.get()->print_to_mata() << std::endl;);
+                }
+            }
 
             /**
              * The following code focuses on reducing the case split, created by the noodlification, as much as possible.
@@ -489,31 +489,34 @@ namespace smt::noodler {
                         }
 
                         // helper pointers to the right and left variable sides
-                        std::vector<unsigned int> soba_right_side;
-                        std::vector<unsigned int> udon_right_side;
-                        std::shared_ptr<mata::nfa::Nfa> soba_first;
-                        std::shared_ptr<mata::nfa::Nfa> udon_first;
+                        std::vector<unsigned int> *soba_right_side;
+                        std::vector<unsigned int> *udon_right_side;
+                        std::shared_ptr<mata::nfa::Nfa> *soba_first;
+                        std::shared_ptr<mata::nfa::Nfa> *udon_first;
 
                         if (soba_larger){
-                            soba_right_side = soba[l].second;
-                            udon_right_side = udon[k].second;
-                            soba_first = soba[l].first;
-                            udon_first = udon[k].first;
+                            soba_right_side = &soba[l].second;
+                            udon_right_side = &udon[k].second;
+                            soba_first = &soba[l].first;
+                            udon_first = &udon[k].first;
                         } else {
-                            soba_right_side = soba[k].second;
-                            udon_right_side = udon[l].second;
-                            soba_first = soba[k].first;
-                            udon_first = udon[l].first;
+                            soba_right_side = &soba[k].second;
+                            udon_right_side = &udon[l].second;
+                            soba_first = &soba[k].first;
+                            udon_first = &udon[l].first;
                         }
 
 
                         // if alignments match, we can compare the automata
-                        if (udon_right_side == soba_right_side){
+                        if (*udon_right_side == *soba_right_side){
                             // the right sides are the same, we can call is_included
-                            bool udon_in_soba = mata::nfa::is_included(*udon_first, *soba_first);
-                            bool soba_in_udon = mata::nfa::is_included(*soba_first, *udon_first);
+                            bool udon_in_soba = mata::nfa::is_included(*(*udon_first), *(*soba_first));
+                            bool soba_in_udon = mata::nfa::is_included(*(*soba_first), *(*udon_first));
                             if (udon_in_soba && soba_in_udon){
                                 STRACE("str", tout << "soba variable is the same as udon" << std::endl;);
+                                STRACE("str", tout << udon_first->get()->print_to_mata() << std::endl;);
+                                STRACE("str", tout << soba_first->get()->print_to_mata() << std::endl;);
+                                STRACE("str", tout << "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" << std::endl;);
                             }
                             else if (udon_in_soba){
                                 // udon is smaller, soba is eaten
@@ -530,26 +533,37 @@ namespace smt::noodler {
                             }
                         }
 
-                        // at the end of the noodle, we can decide if we keep the noodle or not
-                        if (k == bubble_count-1) {
-                            if (udon_is_smaller && soba_is_smaller){
-                                // both noodles are completely the same, we can delete one
-                                deletion_time_udon = true;
-                                STRACE("str", tout << "soba and udon are the same -> eaten" << std::endl;);
-                                break;
-                            } else if (udon_is_smaller){
-                                // udon is smaller, soba is eaten
-                                deletion_time_udon = true;
-                                STRACE("str", tout << "udon is smaller -> eaten" << std::endl;);
-                                break;
-                            } else if (soba_is_smaller){
-                                // soba is smaller, udon is eaten
-                                deletion_time_soba = true;
-                                STRACE("str", tout << "soba is smaller -> eaten" << std::endl;);
-                                break;
-                            }
-                        }
                         l++;
+                    }
+
+                    while (l != bigger_nood.size() - 1 && bigger_nood[l].first->final == bigger_nood[l].first->initial)
+                        l++;
+
+                    if (l != bigger_nood.size() - 1) {
+                        STRACE("str", tout << "magicky skip" << std::endl;);
+                        break;
+                    }
+
+                    if (udon_is_smaller && soba_is_smaller){
+                        // both noodles are completely the same, we can delete one
+                        if (soba_larger){
+                            deletion_time_udon = true;
+                        } else {
+                            deletion_time_soba = true;
+                        }
+
+                        STRACE("str", tout << "soba and udon are the same -> eaten" << std::endl;);
+                        break;
+                    } else if (udon_is_smaller){
+                        // udon is smaller, soba is eaten
+                        deletion_time_udon = true;
+                        STRACE("str", tout << "udon is smaller -> eaten" << std::endl;);
+                        break;
+                    } else if (soba_is_smaller){
+                        // soba is smaller, udon is eaten
+                        deletion_time_soba = true;
+                        STRACE("str", tout << "soba is smaller -> eaten" << std::endl;);
+                        break;
                     }
 
                     // if the udon is smaller, we dont have to push it to newNoodles so we can continue
@@ -570,16 +584,16 @@ namespace smt::noodler {
             }
             noodles = newNoodles;
             STRACE("str", tout << "noodlecount: " << noodles.size() << std::endl;);
-            // STRACE("str", tout << "noodles:" << std::endl;);
-            // for (const auto &noodle : noodles) {
-            //     STRACE("str", tout << "noodle:" << std::endl;);
-            //     for (const auto &noodle_pair : noodle) {
-            //         for (const auto &noodle_pair_pair : noodle_pair.second) {
-            //             STRACE("str", tout << noodle_pair_pair << std::endl;);
-            //         }
-            //         STRACE("str", tout << noodle_pair.first.get()->print_to_mata() << std::endl;);
-            //     }
-            // }
+            STRACE("str", tout << "noodles:" << std::endl;);
+            for (const auto &noodle : noodles) {
+                STRACE("str", tout << "noodle:" << std::endl;);
+                for (const auto &noodle_pair : noodle) {
+                    for (const auto &noodle_pair_pair : noodle_pair.second) {
+                        STRACE("str", tout << noodle_pair_pair << std::endl;);
+                    }
+                    STRACE("str", tout << noodle_pair.first.get()->print_to_mata() << std::endl;);
+                }
+            }
 
             for (const auto &noodle : noodles) {
                 STRACE("str", tout << "Processing noodle" << (is_trace_enabled("str-nfa") ? " with automata:" : "") << std::endl;);
