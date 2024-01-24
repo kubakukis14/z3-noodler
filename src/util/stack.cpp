@@ -18,6 +18,7 @@ Notes:
 #include "util/stack.h"
 #include "util/page.h"
 #include "util/tptr.h"
+#include <cstdint>
 
 inline void stack::store_mark(size_t m) {
     reinterpret_cast<size_t*>(m_curr_ptr)[0] = m;
