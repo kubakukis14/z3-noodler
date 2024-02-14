@@ -165,6 +165,12 @@ namespace smt::noodler {
             ctx.mark_as_relevant(m.mk_not(expr));
         }
 
+        // Check if we already axiomatized the expr
+        if (propagated_string_theory.contains(expr)) {
+            return;
+        }     
+        propagated_string_theory.insert(expr);
+
         sort *expr_sort = expr->get_sort();
         sort *str_sort = m_util_s.str.mk_string_sort();
 
@@ -397,14 +403,7 @@ namespace smt::noodler {
             handle_is_digit(n);
         } else if (
             m_util_s.str.is_stoi(n) || // str.to_int
-            m_util_s.str.is_itos(n) // str.from_int
-        ) {
-            // handle_conversion can handle to/from_int, but decision procedure cannot.
-            // We throw error here so that we get to unknown faster. After decision
-            // procedure gets support for it, remove this and let it fall trough with
-            // is/from_code to handle_conversion
-            util::throw_error("str.to_int and str.from_int is not supported (yet)");
-        } else if (
+            m_util_s.str.is_itos(n) || // str.from_int
             m_util_s.str.is_to_code(n) || // str.to_code
             m_util_s.str.is_from_code(n) // str.from_code
         ) {
@@ -499,6 +498,8 @@ namespace smt::noodler {
         expr_ref l{get_enode(x)->get_expr(), m};
         expr_ref r{get_enode(y)->get_expr(), m};
 
+        STRACE("str", tout << "new_eq: " << l <<  " = " << r << std::endl;);
+
         app* equation = m.mk_eq(l, r);
 
         // TODO explain what is happening here
@@ -533,8 +534,6 @@ namespace smt::noodler {
                 }
             }
         }
-
-        STRACE("str", tout << "new_eq: " << l <<  " = " << r << std::endl;);
     }
 
     void theory_str_noodler::new_diseq_eh(theory_var x, theory_var y) {
@@ -597,12 +596,14 @@ namespace smt::noodler {
         m_word_diseq_todo.push_scope();
         m_membership_todo.push_scope();
         m_not_contains_todo.push_scope();
+        m_conversion_todo.push_scope();
         STRACE("str", tout << "push_scope: " << m_scope_level << '\n';);
     }
 
     void theory_str_noodler::pop_scope_eh(const unsigned num_scopes) {
         // remove all axiomatized terms
         axiomatized_terms.reset();
+        propagated_string_theory.reset();
         m_scope_level -= num_scopes;
         m_word_eq_todo.pop_scope(num_scopes);
         m_lang_eq_todo.pop_scope(num_scopes);
@@ -610,6 +611,7 @@ namespace smt::noodler {
         m_word_diseq_todo.pop_scope(num_scopes);
         m_membership_todo.pop_scope(num_scopes);
         m_not_contains_todo.pop_scope(num_scopes);
+        m_conversion_todo.pop_scope(num_scopes);
         m_rewrite.reset();
         STRACE("str",
             tout << "pop_scope: " << num_scopes << " (back to level " << m_scope_level << ")\n";);
@@ -815,6 +817,12 @@ namespace smt::noodler {
 
         // Gather symbols from relevant (dis)equations and from regular expressions of relevant memberships
         std::set<mata::Symbol> symbols_in_formula = get_symbols_from_relevant();
+        // For the case that it is possible we have to_int/from_int, we keep digits (0-9) as explicit symbols, so that they are not represented by dummy_symbol and it is easier to handle to_int/from_int
+        if (!m_conversion_todo.empty()) {
+            for (mata::Symbol s = 48; s <= 57; ++s) {
+                symbols_in_formula.insert(s);
+            }
+        }
 
         // Create automata assignment for the formula
         AutAssignment aut_assignment{create_aut_assignment_for_formula(instance, symbols_in_formula)};
@@ -877,23 +885,37 @@ namespace smt::noodler {
         dec_proc.init_computation();
 
         expr_ref block_len(m.mk_false(), m);
+        bool was_something_approximated = false;
         while (true) {
             result = dec_proc.compute_next_solution();
             if (result == l_true) {
-                lengths = len_node_to_z3_formula(dec_proc.get_lengths());
-                if (check_len_sat(lengths) == l_true) {
+                auto [noodler_lengths, precision] = dec_proc.get_lengths();
+                lengths = len_node_to_z3_formula(noodler_lengths);
+                lbool is_lengths_sat = check_len_sat(lengths);
+                
+                if (is_lengths_sat == l_true && precision != LenNodePrecision::OVERAPPROX) {
                     STRACE("str", tout << "len sat " << mk_pp(lengths, m) << std::endl;);
                     // save the current assignment to catch it during the loop protection
                     block_curr_len(lengths, true, false);
                     return FC_DONE;
-                } else {
+                } else if (is_lengths_sat == l_false && precision != LenNodePrecision::UNDERAPPROX) {
+                    // TODO is handling underapprox correct here? is it even safe to underapproximate? we do not have a case where we underapproximate, but for the future
                     STRACE("str", tout << "len unsat " <<  mk_pp(lengths, m) << std::endl;);
                     block_len = m.mk_or(block_len, lengths);
+                } else {
+                    was_something_approximated = true;
                 }
             } else if (result == l_false) {
                 // we did not find a solution (with satisfiable length constraints)
                 // we need to block current assignment
                 STRACE("str", tout << "assignment unsat " << mk_pp(block_len, m) << std::endl;);
+
+                if (was_something_approximated) {
+                    // if some length formula was an approximation and it did not lead to solution, we have to give up
+                    STRACE("str", tout << "there was approximating - giving up" << std::endl);
+                    return FC_GIVEUP;
+                }
+
                 if(m.is_false(block_len)) {
                     block_curr_len(block_len, false, true);
                 } else {

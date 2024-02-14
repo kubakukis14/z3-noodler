@@ -22,34 +22,14 @@ namespace smt::noodler {
         UNDERAPPROX
     };
 
-    // Conversions of strings to ints/code values and vice versa
-    enum class ConversionType {
-        TO_CODE,
-        FROM_CODE,
-        TO_INT,
-        FROM_INT,
+    /**
+     * @brief Length formula precision
+     */
+    enum struct LenNodePrecision {
+        PRECISE,
+        UNDERAPPROX,
+        OVERAPPROX,
     };
-
-    // Term conversion: to_int/from_int ...
-    using TermConversion = std::tuple<BasicTerm,BasicTerm,ConversionType>;
-
-    inline std::string get_conversion_name(ConversionType type) {
-        switch (type)
-        {
-        case ConversionType::TO_CODE:
-            return "to_code";
-        case ConversionType::FROM_CODE:
-            return "from_code";
-        case ConversionType::TO_INT:
-            return "to_int";
-        case ConversionType::FROM_INT:
-            return "from_int";
-        
-        default:
-            UNREACHABLE();
-            return "";
-        }
-    }
 
     /**
      * @brief Get the value of the symbol representing all symbols not ocurring in the formula (i.e. a minterm)
@@ -110,8 +90,11 @@ namespace smt::noodler {
          * Get length constraints for the solution. Assumes that we have some solution from
          * running compute_next_solution(), the solution is actually solution if the length
          * constraints hold.
+         * 
+         * The second element of the resulting pair marks whether the lennode is precise or
+         * over/underapproximation.
          */
-        virtual LenNode get_lengths() {
+        virtual std::pair<LenNode, LenNodePrecision> get_lengths() {
             throw std::runtime_error("Unimplemented");
         }
 
@@ -328,11 +311,60 @@ namespace smt::noodler {
         std::vector<Predicate> replace_disequality(Predicate diseq);
 
         /**
-         * @brief Gets length constraint that represent to/from_code/int conversions
-         * 
-         * TODO: from_int, to_int not implemented yet
+         * @brief Gets the formula encoding to_code/from_code/to_int/from_int conversions
          */
-        LenNode get_formula_for_conversions();
+        std::pair<LenNode, LenNodePrecision> get_formula_for_conversions();
+
+        /**
+         * Returns the code var version of @p var used to encode to_code/from_code in get_formula_for_conversions
+         */
+        BasicTerm code_version_of(const BasicTerm& var) {
+            return BasicTerm(BasicTermType::Variable, var.get_name() + "!to_code");
+        }
+
+        /**
+         * Returns the int var version of @p var used to encode to_int/from_int in get_formula_for_conversions
+         */
+        BasicTerm int_version_of(const BasicTerm& var) {
+            return BasicTerm(BasicTermType::Variable, var.get_name() + "!to_int");
+        }
+
+        /**
+         * Gets all vars s_i, such that there exists `c = to_code(s)` or `s = from_code(c)`
+         * in conversions where s is substituted by s_1 ... s_i ... s_n in the solution.
+         */
+        std::set<BasicTerm> get_vars_substituted_in_code_conversions();
+
+        /**
+         * @brief Get the formula for code substituting variables
+         * 
+         * It basically encodes `code_version_of(c) = to_code(c)` for each c in @p code_subst_vars
+         */
+        LenNode get_formula_for_code_subst_vars(const std::set<BasicTerm>& code_subst_vars);
+
+        /**
+         * @brief Returns formula encoding `var = to_int(word)`.
+         * 
+         * Based on handle_invalid_as_from_int, invalid inputs (word is empty/contains non-digits) are either
+         *    - (false) handled normally, i.e., to_int(word) = -1, or
+         *    - (true) handled as if we had `word = from_int(var)`, i.e., var < 0.
+         * 
+         * @param start_with_one if true, encode instead `var = to_int('1'.word)`
+         */
+        LenNode word_to_int(const mata::Word& word, const BasicTerm &var, bool start_with_one, bool handle_invalid_as_from_int);
+
+        /**
+         * @brief Get the formula encoding to_code/from_code conversion
+         */
+        LenNode get_formula_for_code_conversion(const TermConversion& conv);
+
+        /**
+         * @brief Get the formula encoding to_int/from_int conversion
+         * 
+         * @param underapproximating_length For the case that we need to underapproximate, this variable sets
+         * the length up to which we underapproximate
+         */
+        std::pair<LenNode, LenNodePrecision> get_formula_for_int_conversion(const TermConversion& conv, const std::set<BasicTerm>& code_subst_vars, const unsigned underapproximating_length = 3);
 
         /**
          * Formula containing all not_contains predicate (nothing else)
@@ -355,7 +387,7 @@ namespace smt::noodler {
         lbool can_unify_not_contains(const FormulaPreprocessor& prep);
 
     public:
-        
+
         /**
          * Initialize a new decision procedure that can solve word equations
          * (equalities of concatenations of string variables) with regular constraints
@@ -400,7 +432,7 @@ namespace smt::noodler {
 
         LenNode get_initial_lengths() override;
 
-        LenNode get_lengths() override;
+        std::pair<LenNode, LenNodePrecision> get_lengths() override;
     };
 }
 

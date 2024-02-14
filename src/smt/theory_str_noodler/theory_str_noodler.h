@@ -77,7 +77,7 @@ namespace smt::noodler {
         std::vector<app_ref> axiomatized_len_axioms;
         obj_hashtable<expr> axiomatized_terms;
         obj_hashtable<expr> axiomatized_persist_terms;
-        obj_hashtable<expr> propgated_string_theory;
+        obj_hashtable<expr> propagated_string_theory;
         obj_hashtable<expr> m_has_length;          // is length applied
         expr_ref_vector     m_length;             // length applications themselves
         std::vector<std::pair<expr_ref, stored_instance>> axiomatized_instances;
@@ -320,7 +320,7 @@ namespace smt::noodler {
          */
         lbool solve_underapprox(const Formula& instance, const AutAssignment& aut_ass,
                                 const std::unordered_set<BasicTerm>& init_length_sensitive_vars,
-                                std::vector<std::tuple<BasicTerm,BasicTerm,ConversionType>> conversions);
+                                std::vector<TermConversion> conversions);
 
         /**
          * @brief Check if the length formula @p len_formula is satisfiable with the existing length constraints.
@@ -395,7 +395,7 @@ namespace smt::noodler {
          */
         lbool run_length_sat(const Formula& instance, const AutAssignment& aut_ass,
                                 const std::unordered_set<BasicTerm>& init_length_sensitive_vars,
-                                std::vector<std::tuple<BasicTerm,BasicTerm,ConversionType>> conversions);
+                                std::vector<TermConversion> conversions);
 
         /***************** FINAL_CHECK_EH HELPING FUNCTIONS END *******************/
     };
