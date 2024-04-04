@@ -187,6 +187,8 @@ namespace smt::noodler {
          */
         expr_ref len_node_to_z3_formula(const LenNode& len_formula);
 
+        std::tuple<std::map<smt::noodler::BasicTerm, expr_ref>, ast_manager, seq_util, arith_util> vars_for_lengths();
+
         /**
          * @brief Adds @p e as a theory axiom (i.e. to SAT solver).
          * 
@@ -396,6 +398,9 @@ namespace smt::noodler {
         lbool run_length_sat(const Formula& instance, const AutAssignment& aut_ass,
                                 const std::unordered_set<BasicTerm>& init_length_sensitive_vars,
                                 std::vector<TermConversion> conversions);
+
+        // cucoriedka
+        int_expr_solver get_int_solver_xddd();
 
         /***************** FINAL_CHECK_EH HELPING FUNCTIONS END *******************/
     };

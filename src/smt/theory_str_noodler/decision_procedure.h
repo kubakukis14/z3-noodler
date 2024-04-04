@@ -11,6 +11,7 @@
 #include "aut_assignment.h"
 #include "state_len.h"
 #include "formula_preprocess.h"
+#include "expr_solver.h"
 
 namespace smt::noodler {
 
@@ -300,6 +301,10 @@ namespace smt::noodler {
         // keeps the length formulas from replace_disequality(), they need to hold for solution to be satisfiable (get_lengths should create conjunct from them)
         std::vector<LenNode> disequations_len_formula_conjuncts;
 
+        int_expr_solver int_solver;
+
+        const std::tuple<std::map<smt::noodler::BasicTerm, expr_ref>, ast_manager, seq_util, arith_util> vars_for_lengths;
+
         const theory_str_noodler_params& m_params;
 
         /**
@@ -405,11 +410,15 @@ namespace smt::noodler {
              Formula formula, AutAssignment init_aut_ass,
              std::unordered_set<BasicTerm> init_length_sensitive_vars,
              const theory_str_noodler_params &par,
-             std::vector<TermConversion> conversions
+             std::vector<TermConversion> conversions,
+             int_expr_solver int_solver,
+             std::tuple<std::map<smt::noodler::BasicTerm, expr_ref>, ast_manager, seq_util, arith_util> vars_for_lengths
         ) : init_length_sensitive_vars(init_length_sensitive_vars),
             formula(formula),
             init_aut_ass(init_aut_ass),
             conversions(conversions),
+            int_solver(int_solver),
+            vars_for_lengths(vars_for_lengths),
             m_params(par) {
             
             // we extract from the input formula all not_contains predicates and add them to not_contains formula
@@ -433,6 +442,10 @@ namespace smt::noodler {
         LenNode get_initial_lengths() override;
 
         std::pair<LenNode, LenNodePrecision> get_lengths() override;
+
+        std::pair<LenNode, LenNodePrecision> get_node_lengths(SolvingState solution);
+
+        expr_ref len_node_to_z3_formula(const LenNode& len_formula);
     };
 }
 
