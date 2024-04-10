@@ -171,13 +171,16 @@ namespace smt::noodler::util {
     expr_ref len_to_expr(const LenNode &node, const std::map<BasicTerm, expr_ref>& variable_map, ast_manager &m, seq_util& m_util_s, arith_util& m_util_a) {
         switch(node.type) {
         case LenFormulaType::LEAF:
+            std::cout << "LEAF" << std::endl;
             if(node.atom_val.get_type() == BasicTermType::Length)
                 return expr_ref(m_util_a.mk_int(rational(node.atom_val.get_name().encode().c_str())), m);
             else if (node.atom_val.get_type() == BasicTermType::Literal) {
                 // for literal, get the exact length of it
                 return expr_ref(m_util_a.mk_int(node.atom_val.get_name().length()), m);
             } else {
+                std::cout << "Variable: " << node.atom_val.get_name() << std::endl;
                 auto it = variable_map.find(node.atom_val);
+                std::cout << "nah id win" << std::endl;
                 expr_ref var_expr(m);
                 if(it == variable_map.end()) {
                     // if the variable is not found, it was introduced in the preprocessing/decision procedure
@@ -250,6 +253,7 @@ namespace smt::noodler::util {
         }
 
         case LenFormulaType::AND: {
+            std::cout << "AND" << std::endl;
             if(node.succ.size() == 0)
                 return expr_ref(m.mk_true(), m);
             expr_ref andref = len_to_expr(node.succ[0], variable_map, m, m_util_s, m_util_a);

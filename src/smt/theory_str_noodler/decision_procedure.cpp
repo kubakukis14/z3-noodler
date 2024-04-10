@@ -142,13 +142,19 @@ namespace smt::noodler {
                            << "Getting another solution"
                            << "------------------------" << std::endl;);
 
+        // start with formula for disequations
+        std::vector<LenNode> conjuncts = disequations_len_formula_conjuncts;
+        // add length formula from preprocessing
+        conjuncts.push_back(preprocessing_len_formula);
+
         while (!worklist.empty()) {
             SolvingState element_to_process = std::move(worklist.front());
             worklist.pop_front();
 
-            //auto [noodler_lengths, precision] = get_node_lengths(element_to_process);
+            auto [noodler_lengths, precision] = get_node_lengths(element_to_process, conjuncts);
+            len_node_to_z3_formula(noodler_lengths);
             //auto lengths = len_node_to_z3_formula(noodler_lengths);
-            //lbool is_lengths_sat = int_solver.check_sat(lengths);
+            //lbool is_lengths_sat = int_solver->check_sat(lengths);
             //printf("is_lengths_sat: %d\n", is_lengths_sat);
 
             if (element_to_process.inclusions_to_process.empty()) {
@@ -836,33 +842,30 @@ namespace smt::noodler {
         return {LenNode(LenFormulaType::AND, conjuncts), precision};
     }
 
-    std::pair<LenNode, LenNodePrecision> DecisionProcedure::get_node_lengths(SolvingState solution) {
+    std::pair<LenNode, LenNodePrecision> DecisionProcedure::get_node_lengths(SolvingState solut, std::vector<LenNode> conjuncts) {
         LenNodePrecision precision = LenNodePrecision::PRECISE; // start with precise and possibly change it later
 
-        if (solution.length_sensitive_vars.empty()) {
+        if (solut.length_sensitive_vars.empty()) {
             // There are no length vars (which also means no disequations nor conversions), it is not needed to create the lengths formula.
             return {LenNode(LenFormulaType::TRUE), precision};
         }
 
-        // start with formula for disequations
-        std::vector<LenNode> conjuncts = disequations_len_formula_conjuncts;
-        // add length formula from preprocessing
-        conjuncts.push_back(preprocessing_len_formula);
+        auto conjunctions = conjuncts;
 
         // create length constraints from the solution, we only need to look at length sensitive vars
-        for (const BasicTerm &len_var : solution.length_sensitive_vars) {
-            conjuncts.push_back(solution.get_lengths(len_var));
+        for (const BasicTerm &len_var : solut.length_sensitive_vars) {
+            conjunctions.push_back(solut.get_lengths(len_var));
         }
 
         // the following functions (getting formula for conversions) assume that we have flattened substitution map
-        solution.flatten_substition_map();
+        //solution.flatten_substition_map();
 
         // add formula for conversions
-        auto conv_form_with_precision = get_formula_for_conversions();
-        conjuncts.push_back(conv_form_with_precision.first);
-        precision = conv_form_with_precision.second;
+        // auto conv_form_with_precision = get_formula_for_conversions();
+        // conjunctions.push_back(conv_form_with_precision.first);
+        // precision = conv_form_with_precision.second;
 
-        return {LenNode(LenFormulaType::AND, conjuncts), precision};
+        return {LenNode(LenFormulaType::AND, conjunctions), precision};
     }
 
     std::set<BasicTerm> DecisionProcedure::get_vars_substituted_in_code_conversions() {
@@ -1564,10 +1567,11 @@ namespace smt::noodler {
 
     expr_ref DecisionProcedure::len_node_to_z3_formula(const LenNode& len_formula) {
         auto [a, b, c, d] = this->vars_for_lengths;
+        printf("%d", a.empty());
         return util::len_to_expr(
-                len_formula,
-                a,
-                b, c, d );
+                 len_formula,
+                 a,
+                 b, c, d );
     }
 
 } // Namespace smt::noodler.
