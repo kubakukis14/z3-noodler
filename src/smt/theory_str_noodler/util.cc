@@ -184,9 +184,9 @@ namespace smt::noodler::util {
                 // for literal, get the exact length of it
                 return expr_ref(m_util_a.mk_int(node.atom_val.get_name().length()), m);
             } else {
-                std::cout << "Variable: " << node.atom_val.get_name() << std::endl;
+                //std::cout << "Variable: " << node.atom_val.get_name() << std::endl;
                 auto it = variable_map.find(node.atom_val);
-                std::cout << "nah id win" << std::endl;
+                //std::cout << "nah id win" << std::endl;
                 expr_ref var_expr(m);
                 if(it == variable_map.end()) {
                     // if the variable is not found, it was introduced in the preprocessing/decision procedure

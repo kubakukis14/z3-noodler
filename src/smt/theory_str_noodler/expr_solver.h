@@ -50,7 +50,7 @@ namespace smt::noodler {
             erv.push_back(e);
             std::cout << "ryan gosling" << std::endl;
             lbool r = m_kernel.check(erv);
-            std::cout << "check_sat: " << r << std::endl;
+            //std::cout << "check_sat: " << r << std::endl;
             erv.pop_back();
 
             STRACE("str-lia",

@@ -862,8 +862,19 @@ namespace smt::noodler {
             }
         }
 
-        auto ie_solver = get_int_solver_xddd();
-        DecisionProcedure dec_proc = DecisionProcedure{ instance, aut_assignment, init_length_sensitive_vars, m_params, conversions, &ie_solver, vars_for_lengths() };
+        int_expr_solver ie_expr(get_manager(), get_context().get_fparams());
+        // do we solve only regular constraints? If yes, skip other temporary length constraints (they are not necessary)
+        bool include_ass = true;
+        if(this->m_word_diseq_todo_rel.size() == 0 && this->m_word_eq_todo_rel.size() == 0 && this->m_not_contains_todo.size() == 0 && this->m_conversion_todo.size() == 0) {
+            include_ass = false;
+        }
+
+        ie_expr.initialize(get_context(), include_ass);
+        std::tuple<const std::map<smt::noodler::BasicTerm, expr_ref>&, ast_manager&, seq_util&, arith_util&> vars_for_lengths_refs(std::ref(this->var_name), std::ref(this->m), std::ref(this->m_util_s), std::ref(this->m_util_a));
+        ast_manager zbynek = get_manager();
+        (void)zbynek;
+        DecisionProcedure dec_proc = DecisionProcedure{ instance, aut_assignment, init_length_sensitive_vars, m_params, conversions, ie_expr, vars_for_lengths_refs };
+        
 
         STRACE("str", tout << "Starting preprocessing" << std::endl);
         lbool result = dec_proc.preprocess(PreprocessType::PLAIN, this->var_eqs.get_equivalence_bt());
@@ -2436,9 +2447,9 @@ namespace smt::noodler {
                 this->m, this->m_util_s, this->m_util_a );
     }
 
-    std::tuple<std::map<smt::noodler::BasicTerm, obj_ref<expr, ast_manager>>, ast_manager, seq_util, arith_util> theory_str_noodler::vars_for_lengths() {
-        return  std::make_tuple(this->var_name, this->m, this->m_util_s, this->m_util_a);
-    }
+    // std::tuple<std::map<smt::noodler::BasicTerm, obj_ref<expr, ast_manager>>, ast_manager, seq_util, arith_util> theory_str_noodler::vars_for_lengths() {
+    //     return  std::make_tuple((this->var_name), (this->m), (this->m_util_s), (this->m_util_a));
+    // }
 
     // drevokocur
     int_expr_solver theory_str_noodler::get_int_solver_xddd() {

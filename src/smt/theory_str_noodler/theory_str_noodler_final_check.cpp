@@ -229,7 +229,10 @@ namespace smt::noodler {
                                                 const std::unordered_set<BasicTerm>& init_length_sensitive_vars,
                                                 std::vector<TermConversion> conversions) {
         auto ie_solver = get_int_solver_xddd();
-        DecisionProcedure dec_proc = DecisionProcedure{ instance, aut_assignment, init_length_sensitive_vars, m_params, conversions, &ie_solver, vars_for_lengths() };
+        std::tuple<const std::map<smt::noodler::BasicTerm, expr_ref>&, ast_manager&, seq_util&, arith_util&> vars_for_lengths_refs(
+    this->var_name, this->m, this->m_util_s, this->m_util_a);
+        auto m = get_manager();
+        DecisionProcedure dec_proc = DecisionProcedure{ instance, aut_assignment, init_length_sensitive_vars, m_params, conversions, std::ref(ie_solver), vars_for_lengths_refs};
         if (dec_proc.preprocess(PreprocessType::UNDERAPPROX, this->var_eqs.get_equivalence_bt()) == l_false) {
             return l_false;
         }
@@ -245,10 +248,10 @@ namespace smt::noodler {
     }
 
     lbool theory_str_noodler::check_len_sat(expr_ref len_formula, expr_ref* unsat_core) {
-        if (len_formula == m.mk_true()) {
-            // we assume here that existing length constraints are satisfiable, so adding true will do nothing
-            return l_true;
-        }
+        // if (len_formula == m.mk_true()) {
+        //     // we assume here that existing length constraints are satisfiable, so adding true will do nothing
+        //     return l_true;
+        // }
 
         int_expr_solver m_int_solver(get_manager(), get_context().get_fparams());
         // do we solve only regular constraints? If yes, skip other temporary length constraints (they are not necessary)
@@ -586,7 +589,9 @@ namespace smt::noodler {
                                 std::vector<TermConversion> conversions) {
 
         auto ie_solver = get_int_solver_xddd();
-        DecisionProcedure dec_proc = DecisionProcedure{ instance, aut_ass, init_length_sensitive_vars, m_params, conversions, &ie_solver, vars_for_lengths() };
+        std::tuple<const std::map<smt::noodler::BasicTerm, expr_ref>&, ast_manager&, seq_util&, arith_util&> vars_for_lengths_refs(
+    this->var_name, this->m, this->m_util_s, this->m_util_a);
+        DecisionProcedure dec_proc = DecisionProcedure{ instance, aut_ass, init_length_sensitive_vars, m_params, conversions, std::ref(ie_solver), vars_for_lengths_refs };
         expr_ref lengths = len_node_to_z3_formula(dec_proc.get_initial_lengths());
         if(check_len_sat(lengths) == l_false) {
             STRACE("str", tout << "Unsat from initial lengths (one symbol)" << std::endl);

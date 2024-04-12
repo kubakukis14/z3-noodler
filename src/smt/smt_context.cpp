@@ -3618,7 +3618,7 @@ namespace smt {
     }
 
     lbool context::check(unsigned num_assumptions, expr * const * assumptions, bool reset_cancel) {
-        std::cout << "context::check2" << std::endl;
+        //std::cout << "context::check2" << std::endl;
         if (!check_preamble(reset_cancel)) return l_undef;
         SASSERT(at_base_level());
         setup_context(false);

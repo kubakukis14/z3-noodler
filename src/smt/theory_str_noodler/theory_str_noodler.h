@@ -187,7 +187,7 @@ namespace smt::noodler {
          */
         expr_ref len_node_to_z3_formula(const LenNode& len_formula);
 
-        std::tuple<std::map<smt::noodler::BasicTerm, obj_ref<expr, ast_manager>>, ast_manager, seq_util, arith_util> vars_for_lengths();
+        //std::tuple<std::map<smt::noodler::BasicTerm, obj_ref<expr, ast_manager>>&, ast_manager&, seq_util&, arith_util&> vars_for_lengths();
 
         /**
          * @brief Adds @p e as a theory axiom (i.e. to SAT solver).

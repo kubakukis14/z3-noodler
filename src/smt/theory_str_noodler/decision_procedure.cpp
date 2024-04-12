@@ -156,12 +156,12 @@ namespace smt::noodler {
             //auto aaa = len_node_to_z3_formula_swag(noodler_lengths);
             auto lengths = len_node_to_z3_formula_swag(noodler_lengths);
             lbool is_lengths_sat;
-            ast_manager m = std::get<1>(vars_for_lengths);
+            auto m = std::get<1>(vars_for_lengths);
             if (lengths == m.mk_true()) {
             // we assume here that existing length constraints are satisfiable, so adding true will do nothing
                 is_lengths_sat = l_true;
             } else {
-                is_lengths_sat = int_solver->check_sat(lengths);
+                is_lengths_sat = int_solver.check_sat(lengths);
             }
             
             std::cout << "is_lengths_sat:" << is_lengths_sat << std::endl;
@@ -1576,7 +1576,7 @@ namespace smt::noodler {
 
     expr_ref DecisionProcedure::len_node_to_z3_formula_swag(const LenNode& len_formula) {
         //std::cout << "AAAAAAAAAAAAAAAAAAAAAA" << std::endl;
-        auto& [a, b, c, d] = this->vars_for_lengths;
+        auto [a, b, c, d] = this->vars_for_lengths;
         //printf("%d", a.empty());
         //std::cout << "AAAAAAAAAAAAAAAAAAAAAA" << std::endl;
         return util::len_to_expr(

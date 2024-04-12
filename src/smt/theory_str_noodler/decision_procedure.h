@@ -301,9 +301,9 @@ namespace smt::noodler {
         // keeps the length formulas from replace_disequality(), they need to hold for solution to be satisfiable (get_lengths should create conjunct from them)
         std::vector<LenNode> disequations_len_formula_conjuncts;
 
-        int_expr_solver *int_solver;
+        int_expr_solver& int_solver;
 
-        std::tuple<const std::map<smt::noodler::BasicTerm, expr_ref>, ast_manager, seq_util, arith_util> vars_for_lengths;
+        std::tuple<const std::map<smt::noodler::BasicTerm, expr_ref>&, ast_manager&, seq_util&, arith_util&> vars_for_lengths;
 
         const theory_str_noodler_params& m_params;
 
@@ -411,8 +411,8 @@ namespace smt::noodler {
              std::unordered_set<BasicTerm> init_length_sensitive_vars,
              const theory_str_noodler_params &par,
              std::vector<TermConversion> conversions,
-             int_expr_solver *int_solver,
-             std::tuple<std::map<smt::noodler::BasicTerm, obj_ref<expr, ast_manager>>, ast_manager, seq_util, arith_util> vars_for_lengths
+             int_expr_solver &int_solver,
+             std::tuple<const std::map<smt::noodler::BasicTerm, obj_ref<expr, ast_manager>>&, ast_manager&, seq_util&, arith_util&> vars_for_lengths
         ) : init_length_sensitive_vars(init_length_sensitive_vars),
             formula(formula),
             init_aut_ass(init_aut_ass),
@@ -421,9 +421,9 @@ namespace smt::noodler {
             vars_for_lengths(vars_for_lengths),
             m_params(par) {
 
-            if (int_solver == nullptr) {
-                std::cout << "bubak" << std::endl;
-            }
+            // if (int_solver == nullptr) {
+            //     std::cout << "bubak" << std::endl;
+            // }
             
             // we extract from the input formula all not_contains predicates and add them to not_contains formula
             this->formula.extract_predicates(PredicateType::NotContains, this->not_contains);
