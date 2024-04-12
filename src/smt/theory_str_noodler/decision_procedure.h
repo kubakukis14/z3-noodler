@@ -303,7 +303,7 @@ namespace smt::noodler {
 
         int_expr_solver *int_solver;
 
-        const std::tuple<std::map<smt::noodler::BasicTerm, expr_ref>, ast_manager, seq_util, arith_util> vars_for_lengths;
+        std::tuple<const std::map<smt::noodler::BasicTerm, expr_ref>, ast_manager, seq_util, arith_util> vars_for_lengths;
 
         const theory_str_noodler_params& m_params;
 
@@ -420,6 +420,10 @@ namespace smt::noodler {
             int_solver(int_solver),
             vars_for_lengths(vars_for_lengths),
             m_params(par) {
+
+            if (int_solver == nullptr) {
+                std::cout << "bubak" << std::endl;
+            }
             
             // we extract from the input formula all not_contains predicates and add them to not_contains formula
             this->formula.extract_predicates(PredicateType::NotContains, this->not_contains);
@@ -445,7 +449,7 @@ namespace smt::noodler {
 
         std::pair<LenNode, LenNodePrecision> get_node_lengths(SolvingState solut, std::vector<LenNode> conjuncts);
 
-        expr_ref len_node_to_z3_formula(const LenNode& len_formula);
+        expr_ref len_node_to_z3_formula_swag(const LenNode& len_formula);
     };
 }
 

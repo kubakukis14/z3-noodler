@@ -152,10 +152,19 @@ namespace smt::noodler {
             worklist.pop_front();
 
             auto [noodler_lengths, precision] = get_node_lengths(element_to_process, conjuncts);
-            len_node_to_z3_formula(noodler_lengths);
-            //auto lengths = len_node_to_z3_formula(noodler_lengths);
-            //lbool is_lengths_sat = int_solver->check_sat(lengths);
-            //printf("is_lengths_sat: %d\n", is_lengths_sat);
+            //std::cout << "REKNI NECO PROSIM" << std::endl;
+            //auto aaa = len_node_to_z3_formula_swag(noodler_lengths);
+            auto lengths = len_node_to_z3_formula_swag(noodler_lengths);
+            lbool is_lengths_sat;
+            ast_manager m = std::get<1>(vars_for_lengths);
+            if (lengths == m.mk_true()) {
+            // we assume here that existing length constraints are satisfiable, so adding true will do nothing
+                is_lengths_sat = l_true;
+            } else {
+                is_lengths_sat = int_solver->check_sat(lengths);
+            }
+            
+            std::cout << "is_lengths_sat:" << is_lengths_sat << std::endl;
 
             if (element_to_process.inclusions_to_process.empty()) {
                 // we found another solution, element_to_process contain the automata
@@ -858,7 +867,7 @@ namespace smt::noodler {
         }
 
         // the following functions (getting formula for conversions) assume that we have flattened substitution map
-        //solution.flatten_substition_map();
+        solut.flatten_substition_map();
 
         // add formula for conversions
         // auto conv_form_with_precision = get_formula_for_conversions();
@@ -1565,9 +1574,11 @@ namespace smt::noodler {
         return l_undef;
     }
 
-    expr_ref DecisionProcedure::len_node_to_z3_formula(const LenNode& len_formula) {
-        auto [a, b, c, d] = this->vars_for_lengths;
-        printf("%d", a.empty());
+    expr_ref DecisionProcedure::len_node_to_z3_formula_swag(const LenNode& len_formula) {
+        //std::cout << "AAAAAAAAAAAAAAAAAAAAAA" << std::endl;
+        auto& [a, b, c, d] = this->vars_for_lengths;
+        //printf("%d", a.empty());
+        //std::cout << "AAAAAAAAAAAAAAAAAAAAAA" << std::endl;
         return util::len_to_expr(
                  len_formula,
                  a,

@@ -862,7 +862,7 @@ namespace smt::noodler {
             }
         }
 
-        int_expr_solver ie_solver = get_int_solver_xddd();
+        auto ie_solver = get_int_solver_xddd();
         DecisionProcedure dec_proc = DecisionProcedure{ instance, aut_assignment, init_length_sensitive_vars, m_params, conversions, &ie_solver, vars_for_lengths() };
 
         STRACE("str", tout << "Starting preprocessing" << std::endl);
@@ -2442,12 +2442,15 @@ namespace smt::noodler {
 
     // drevokocur
     int_expr_solver theory_str_noodler::get_int_solver_xddd() {
+    //int_expr_solver theory_str_noodler::get_int_solver_xddd() {
+        //int_expr_solver m_int_solver(get_manager(), get_context().get_fparams());
         int_expr_solver m_int_solver(get_manager(), get_context().get_fparams());
         // do we solve only regular constraints? If yes, skip other temporary length constraints (they are not necessary)
         bool include_ass = true;
         if(this->m_word_diseq_todo_rel.size() == 0 && this->m_word_eq_todo_rel.size() == 0 && this->m_not_contains_todo.size() == 0 && this->m_conversion_todo.size() == 0) {
             include_ass = false;
         }
+
         m_int_solver.initialize(get_context(), include_ass);
         return m_int_solver;
     }

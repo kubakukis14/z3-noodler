@@ -228,7 +228,7 @@ namespace smt::noodler {
     lbool theory_str_noodler::solve_underapprox(const Formula& instance, const AutAssignment& aut_assignment,
                                                 const std::unordered_set<BasicTerm>& init_length_sensitive_vars,
                                                 std::vector<TermConversion> conversions) {
-        int_expr_solver ie_solver = get_int_solver_xddd();
+        auto ie_solver = get_int_solver_xddd();
         DecisionProcedure dec_proc = DecisionProcedure{ instance, aut_assignment, init_length_sensitive_vars, m_params, conversions, &ie_solver, vars_for_lengths() };
         if (dec_proc.preprocess(PreprocessType::UNDERAPPROX, this->var_eqs.get_equivalence_bt()) == l_false) {
             return l_false;
@@ -585,7 +585,7 @@ namespace smt::noodler {
                                 const std::unordered_set<BasicTerm>& init_length_sensitive_vars,
                                 std::vector<TermConversion> conversions) {
 
-        int_expr_solver ie_solver = get_int_solver_xddd();
+        auto ie_solver = get_int_solver_xddd();
         DecisionProcedure dec_proc = DecisionProcedure{ instance, aut_ass, init_length_sensitive_vars, m_params, conversions, &ie_solver, vars_for_lengths() };
         expr_ref lengths = len_node_to_z3_formula(dec_proc.get_initial_lengths());
         if(check_len_sat(lengths) == l_false) {

@@ -3618,6 +3618,7 @@ namespace smt {
     }
 
     lbool context::check(unsigned num_assumptions, expr * const * assumptions, bool reset_cancel) {
+        std::cout << "context::check2" << std::endl;
         if (!check_preamble(reset_cancel)) return l_undef;
         SASSERT(at_base_level());
         setup_context(false);
@@ -3649,6 +3650,7 @@ namespace smt {
     }
 
     lbool context::check(expr_ref_vector const& cube, vector<expr_ref_vector> const& clauses) {
+        std::cout << "context::check" << std::endl;
         if (!check_preamble(true)) return l_undef;
         TRACE("before_search", display(tout););
         setup_context(false);
