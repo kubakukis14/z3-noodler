@@ -158,13 +158,15 @@ namespace smt::noodler {
             lbool is_lengths_sat;
             auto m = std::get<1>(vars_for_lengths);
             if (lengths == m.mk_true()) {
-            // we assume here that existing length constraints are satisfiable, so adding true will do nothing
+                // we assume here that existing length constraints are satisfiable, so adding true will do nothing
                 is_lengths_sat = l_true;
             } else {
-                is_lengths_sat = int_solver.check_sat(lengths);
+                if (int_solver.check_sat(lengths) != l_true) {
+                    STRACE("str", tout << "Node lengths unsat" << std::endl;);
+                    return l_false;
+                }
             }
             
-            std::cout << "is_lengths_sat:" << is_lengths_sat << std::endl;
 
             if (element_to_process.inclusions_to_process.empty()) {
                 // we found another solution, element_to_process contain the automata

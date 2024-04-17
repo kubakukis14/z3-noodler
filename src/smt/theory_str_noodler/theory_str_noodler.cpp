@@ -871,8 +871,6 @@ namespace smt::noodler {
 
         ie_expr.initialize(get_context(), include_ass);
         std::tuple<const std::map<smt::noodler::BasicTerm, expr_ref>&, ast_manager&, seq_util&, arith_util&> vars_for_lengths_refs(std::ref(this->var_name), std::ref(this->m), std::ref(this->m_util_s), std::ref(this->m_util_a));
-        ast_manager zbynek = get_manager();
-        (void)zbynek;
         DecisionProcedure dec_proc = DecisionProcedure{ instance, aut_assignment, init_length_sensitive_vars, m_params, conversions, ie_expr, vars_for_lengths_refs };
         
 

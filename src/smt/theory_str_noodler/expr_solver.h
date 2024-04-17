@@ -48,7 +48,7 @@ namespace smt::noodler {
         lbool check_sat(expr* e) override {
     //        m_kernel.push();
             erv.push_back(e);
-            std::cout << "ryan gosling" << std::endl;
+            //std::cout << "ryan gosling" << std::endl;
             lbool r = m_kernel.check(erv);
             //std::cout << "check_sat: " << r << std::endl;
             erv.pop_back();

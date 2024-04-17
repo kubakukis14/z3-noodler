@@ -230,7 +230,7 @@ namespace smt::noodler {
                                                 std::vector<TermConversion> conversions) {
         auto ie_solver = get_int_solver_xddd();
         std::tuple<const std::map<smt::noodler::BasicTerm, expr_ref>&, ast_manager&, seq_util&, arith_util&> vars_for_lengths_refs(
-    this->var_name, this->m, this->m_util_s, this->m_util_a);
+            this->var_name, this->m, this->m_util_s, this->m_util_a);
         auto m = get_manager();
         DecisionProcedure dec_proc = DecisionProcedure{ instance, aut_assignment, init_length_sensitive_vars, m_params, conversions, std::ref(ie_solver), vars_for_lengths_refs};
         if (dec_proc.preprocess(PreprocessType::UNDERAPPROX, this->var_eqs.get_equivalence_bt()) == l_false) {
