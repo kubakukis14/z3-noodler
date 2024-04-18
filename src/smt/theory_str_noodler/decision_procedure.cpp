@@ -161,7 +161,8 @@ namespace smt::noodler {
                 // we assume here that existing length constraints are satisfiable, so adding true will do nothing
                 is_lengths_sat = l_true;
             } else {
-                if (int_solver.check_sat(lengths) != l_true) {
+                is_lengths_sat = int_solver.check_sat(lengths);
+                if (is_lengths_sat == l_false) {
                     STRACE("str", tout << "Node lengths unsat" << std::endl;);
                     return l_false;
                 }
