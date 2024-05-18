@@ -148,8 +148,19 @@ namespace smt::noodler {
         conjuncts.push_back(preprocessing_len_formula);
 
         while (!worklist.empty()) {
+
+
             SolvingState element_to_process = std::move(worklist.front());
             worklist.pop_front();
+
+            int_expr_solver ie_expr(manager, fparams);
+            // do we solve only regular constraints? If yes, skip other temporary length constraints (they are not necessary)
+            bool include_ass = true;
+            if(this->m_word_diseq_todo_rel.size() == 0 && this->m_word_eq_todo_rel.size() == 0 && this->m_not_contains_todo.size() == 0 && this->m_conversion_todo.size() == 0) {
+                include_ass = false;
+            }
+
+            ie_expr.initialize(ctx, include_ass);
 
             auto [noodler_lengths, precision] = get_node_lengths(element_to_process, conjuncts);
             //std::cout << "REKNI NECO PROSIM" << std::endl;
@@ -162,7 +173,7 @@ namespace smt::noodler {
                 std::cout << "GOSLING???????????" << std::endl;
                 is_lengths_sat = l_true;
             } else {
-                is_lengths_sat = int_solver.check_sat(lengths);
+                is_lengths_sat = ie_expr.check_sat(lengths);
                 if (is_lengths_sat == l_false) {
                     STRACE("str", tout << "Node lengths unsat" << std::endl;);
                     //return l_false;
