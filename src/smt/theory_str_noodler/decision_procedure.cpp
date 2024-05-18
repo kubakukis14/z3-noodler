@@ -159,12 +159,14 @@ namespace smt::noodler {
             auto m = std::get<1>(vars_for_lengths);
             if (lengths == m.mk_true()) {
                 // we assume here that existing length constraints are satisfiable, so adding true will do nothing
+                std::cout << "GOSLING???????????" << std::endl;
                 is_lengths_sat = l_true;
             } else {
                 is_lengths_sat = int_solver.check_sat(lengths);
                 if (is_lengths_sat == l_false) {
                     STRACE("str", tout << "Node lengths unsat" << std::endl;);
-                    return l_false;
+                    //return l_false;
+                    return l_true;
                 }
             }
             

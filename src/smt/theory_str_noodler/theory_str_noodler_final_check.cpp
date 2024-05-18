@@ -253,10 +253,10 @@ namespace smt::noodler {
     }
 
     lbool theory_str_noodler::check_len_sat(expr_ref len_formula, expr_ref* unsat_core) {
-        // if (len_formula == m.mk_true()) {
-        //     // we assume here that existing length constraints are satisfiable, so adding true will do nothing
-        //     return l_true;
-        // }
+        if (len_formula == m.mk_true()) {
+            // we assume here that existing length constraints are satisfiable, so adding true will do nothing
+            return l_true;
+        }
 
         int_expr_solver m_int_solver(get_manager(), get_context().get_fparams());
         // do we solve only regular constraints? If yes, skip other temporary length constraints (they are not necessary)
