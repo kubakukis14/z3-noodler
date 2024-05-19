@@ -147,6 +147,7 @@ namespace smt::noodler {
         // add length formula from preprocessing
         conjuncts.push_back(preprocessing_len_formula);
 
+        expr_ref *unsat_core = nullptr;
         while (!worklist.empty()) {
 
 
@@ -167,20 +168,23 @@ namespace smt::noodler {
             //auto aaa = len_node_to_z3_formula_swag(noodler_lengths);
             auto lengths = len_node_to_z3_formula_swag(noodler_lengths);
             lbool is_lengths_sat;
-            auto m = std::get<1>(vars_for_lengths);
-            if (lengths == m.mk_true()) {
-                // we assume here that existing length constraints are satisfiable, so adding true will do nothing
+            //auto m = std::get<1>(vars_for_lengths);
+            if (lengths == manager.mk_true()) {
+                // we assume here that existing length constraints are satisfiable, so we skip the length check
                 std::cout << "GOSLING???????????" << std::endl;
-                is_lengths_sat = l_true;
             } else {
                 is_lengths_sat = ie_expr.check_sat(lengths);
                 if (is_lengths_sat == l_false) {
                     STRACE("str", tout << "Node lengths unsat" << std::endl;);
+                    if(unsat_core != nullptr) {
+                        for(unsigned i=0;i<ie_expr.m_kernel.get_unsat_core_size();i++){
+                            *unsat_core = manager.mk_and(*unsat_core, ie_expr.m_kernel.get_unsat_core_expr(i));
+                        }
+                    }
                     //return l_false;
                     return l_true;
                 }
             }
-            
 
             if (element_to_process.inclusions_to_process.empty()) {
                 // we found another solution, element_to_process contain the automata
@@ -869,13 +873,18 @@ namespace smt::noodler {
 
     std::pair<LenNode, LenNodePrecision> DecisionProcedure::get_node_lengths(SolvingState solut, std::vector<LenNode> conjuncts) {
         LenNodePrecision precision = LenNodePrecision::PRECISE; // start with precise and possibly change it later
-
+        (void)conjuncts;
         if (solut.length_sensitive_vars.empty()) {
             // There are no length vars (which also means no disequations nor conversions), it is not needed to create the lengths formula.
             return {LenNode(LenFormulaType::TRUE), precision};
         }
 
-        auto conjunctions = conjuncts;
+        //auto conjunctions = conjuncts;
+
+        // start with formula for disequations
+        std::vector<LenNode> conjunctions = disequations_len_formula_conjuncts;
+        // add length formula from preprocessing
+        conjunctions.push_back(preprocessing_len_formula);
 
         // create length constraints from the solution, we only need to look at length sensitive vars
         for (const BasicTerm &len_var : solut.length_sensitive_vars) {
@@ -886,9 +895,9 @@ namespace smt::noodler {
         solut.flatten_substition_map();
 
         // add formula for conversions
-        // auto conv_form_with_precision = get_formula_for_conversions();
-        // conjunctions.push_back(conv_form_with_precision.first);
-        // precision = conv_form_with_precision.second;
+        auto conv_form_with_precision = get_formula_for_conversions();
+        conjunctions.push_back(conv_form_with_precision.first);
+        precision = conv_form_with_precision.second;
 
         return {LenNode(LenFormulaType::AND, conjunctions), precision};
     }
