@@ -872,9 +872,7 @@ namespace smt::noodler {
         ie_expr.initialize(get_context(), include_ass);
         std::tuple<const std::map<smt::noodler::BasicTerm, expr_ref>&, ast_manager&, seq_util&, arith_util&> vars_for_lengths_refs(std::ref(this->var_name), std::ref(this->m), std::ref(this->m_util_s), std::ref(this->m_util_a));
         DecisionProcedure dec_proc = DecisionProcedure{ instance, aut_assignment, init_length_sensitive_vars, m_params, 
-         conversions, ie_expr, vars_for_lengths_refs, std::ref(get_manager()), std::ref(get_context()), 
-         std::ref(get_context().get_fparams()), std::ref(m_word_diseq_todo_rel),
-         std::ref(m_word_eq_todo_rel), std::ref(m_not_contains_todo), std::ref(m_conversion_todo), true};        
+         conversions, ie_expr, vars_for_lengths_refs, std::ref(get_manager()), true};        
 
         STRACE("str", tout << "Starting preprocessing" << std::endl);
         lbool result = dec_proc.preprocess(PreprocessType::PLAIN, this->var_eqs.get_equivalence_bt());

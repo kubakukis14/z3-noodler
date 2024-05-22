@@ -307,18 +307,6 @@ namespace smt::noodler {
 
          ast_manager& manager;
 
-         context& ctx;
-
-         smt_params& fparams;
-
-         vector<std::pair<expr_ref, expr_ref>>& m_word_diseq_todo_rel;
-
-         vector<std::pair<expr_ref, expr_ref>>& m_word_eq_todo_rel;
-
-         scoped_vector<std::pair<expr_ref, expr_ref>>& m_not_contains_todo;
-
-         scoped_vector<std::tuple<expr_ref,expr_ref,ConversionType>>& m_conversion_todo;
-
          bool check_lengths;
 
         const theory_str_noodler_params& m_params;
@@ -430,12 +418,6 @@ namespace smt::noodler {
              int_expr_solver &int_solver,
              std::tuple<const std::map<smt::noodler::BasicTerm, obj_ref<expr, ast_manager>>&, ast_manager&, seq_util&, arith_util&> vars_for_lengths,
               ast_manager& manager,
-              context& ctx,
-              smt_params& fparams,
-              vector<std::pair<expr_ref, expr_ref>>& m_word_diseq_todo_rel,
-              vector<std::pair<expr_ref, expr_ref>>& m_word_eq_todo_rel,
-              scoped_vector<std::pair<expr_ref, expr_ref>>& m_not_contains_todo,
-              scoped_vector<std::tuple<expr_ref,expr_ref,ConversionType>>& m_conversion_todo,
               bool check_lengths
         ) : init_length_sensitive_vars(init_length_sensitive_vars),
             formula(formula),
@@ -444,12 +426,6 @@ namespace smt::noodler {
             int_solver(int_solver),
             vars_for_lengths(vars_for_lengths),
             manager(manager),
-            ctx(ctx),
-            fparams(fparams),
-            m_word_diseq_todo_rel(m_word_diseq_todo_rel),
-            m_word_eq_todo_rel(m_word_eq_todo_rel),
-            m_not_contains_todo(m_not_contains_todo),
-            m_conversion_todo(m_conversion_todo),
             check_lengths(check_lengths),
             m_params(par) {
 
@@ -479,7 +455,7 @@ namespace smt::noodler {
 
         std::pair<LenNode, LenNodePrecision> get_lengths() override;
 
-        std::pair<LenNode, LenNodePrecision> get_node_lengths(SolvingState solut, std::vector<LenNode> conjuncts);
+        std::pair<LenNode, LenNodePrecision> get_node_lengths(SolvingState solut);
 
         expr_ref len_node_to_z3_formula_swag(const LenNode& len_formula);
     };
