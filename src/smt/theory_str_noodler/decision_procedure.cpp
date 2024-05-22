@@ -142,10 +142,6 @@ namespace smt::noodler {
                            << "Getting another solution"
                            << "------------------------" << std::endl;);
 
-        // start with formula for disequations
-        std::vector<LenNode> conjuncts = disequations_len_formula_conjuncts;
-        // add length formula from preprocessing
-        conjuncts.push_back(preprocessing_len_formula);
 
         expr_ref *unsat_core = nullptr;
         while (!worklist.empty()) {
@@ -154,35 +150,43 @@ namespace smt::noodler {
             SolvingState element_to_process = std::move(worklist.front());
             worklist.pop_front();
 
-            int_expr_solver ie_expr(manager, fparams);
-            // do we solve only regular constraints? If yes, skip other temporary length constraints (they are not necessary)
-            bool include_ass = true;
-            if(this->m_word_diseq_todo_rel.size() == 0 && this->m_word_eq_todo_rel.size() == 0 && this->m_not_contains_todo.size() == 0 && this->m_conversion_todo.size() == 0) {
-                include_ass = false;
-            }
+            if (check_lengths) {
+                // start with formula for disequations
+                std::vector<LenNode> conjuncts = disequations_len_formula_conjuncts;
+                // add length formula from preprocessing
+                conjuncts.push_back(preprocessing_len_formula);
 
-            ie_expr.initialize(ctx, include_ass);
+                int_expr_solver ie_expr(manager, fparams);
+                // do we solve only regular constraints? If yes, skip other temporary length constraints (they are not necessary)
+                bool include_ass = true;
+                if(this->m_word_diseq_todo_rel.size() == 0 && this->m_word_eq_todo_rel.size() == 0 && this->m_not_contains_todo.size() == 0 && this->m_conversion_todo.size() == 0) {
+                    include_ass = false;
+                }
 
-            auto [noodler_lengths, precision] = get_node_lengths(element_to_process, conjuncts);
-            //std::cout << "REKNI NECO PROSIM" << std::endl;
-            //auto aaa = len_node_to_z3_formula_swag(noodler_lengths);
-            auto lengths = len_node_to_z3_formula_swag(noodler_lengths);
-            lbool is_lengths_sat;
-            //auto m = std::get<1>(vars_for_lengths);
-            if (lengths == manager.mk_true()) {
-                // we assume here that existing length constraints are satisfiable, so we skip the length check
-                std::cout << "GOSLING???????????" << std::endl;
-            } else {
-                is_lengths_sat = ie_expr.check_sat(lengths);
-                if (is_lengths_sat == l_false) {
-                    STRACE("str", tout << "Node lengths unsat" << std::endl;);
-                    if(unsat_core != nullptr) {
-                        for(unsigned i=0;i<ie_expr.m_kernel.get_unsat_core_size();i++){
-                            *unsat_core = manager.mk_and(*unsat_core, ie_expr.m_kernel.get_unsat_core_expr(i));
+                ie_expr.initialize(ctx, include_ass);
+
+                auto [noodler_lengths, precision] = get_node_lengths(element_to_process, conjuncts);
+                //std::cout << "REKNI NECO PROSIM" << std::endl;
+                //auto aaa = len_node_to_z3_formula_swag(noodler_lengths);
+                auto lengths = len_node_to_z3_formula_swag(noodler_lengths);
+                lbool is_lengths_sat;
+                //auto m = std::get<1>(vars_for_lengths);
+                if (lengths == manager.mk_true()) {
+                    // we assume here that existing length constraints are satisfiable, so we skip the length check
+                    std::cout << "GOSLING???????????" << std::endl;
+                } else {
+                    is_lengths_sat = ie_expr.check_sat(lengths);
+                    if (is_lengths_sat == l_false) {
+                        std::cout << "nig-" << std::endl;
+                        STRACE("str", tout << "Node lengths unsat" << std::endl;);
+                        if(unsat_core != nullptr) {
+                            for(unsigned i=0;i<ie_expr.m_kernel.get_unsat_core_size();i++){
+                                *unsat_core = manager.mk_and(*unsat_core, ie_expr.m_kernel.get_unsat_core_expr(i));
+                            }
                         }
+                        //return l_false;
+                        return l_true;
                     }
-                    //return l_false;
-                    return l_true;
                 }
             }
 

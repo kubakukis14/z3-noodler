@@ -242,7 +242,7 @@ namespace smt::noodler {
         DecisionProcedure dec_proc = DecisionProcedure{ instance, aut_assignment, init_length_sensitive_vars, m_params, 
          conversions, ie_expr, vars_for_lengths_refs, std::ref(get_manager()), std::ref(get_context()), 
          std::ref(get_context().get_fparams()), std::ref(m_word_diseq_todo_rel),
-         std::ref(m_word_eq_todo_rel), std::ref(m_not_contains_todo), std::ref(m_conversion_todo)};
+         std::ref(m_word_eq_todo_rel), std::ref(m_not_contains_todo), std::ref(m_conversion_todo), false};
 
         if (dec_proc.preprocess(PreprocessType::UNDERAPPROX, this->var_eqs.get_equivalence_bt()) == l_false) {
             return l_false;
@@ -611,7 +611,8 @@ namespace smt::noodler {
         DecisionProcedure dec_proc = DecisionProcedure{ instance, aut_ass, init_length_sensitive_vars, m_params, 
          conversions, ie_expr, vars_for_lengths_refs, std::ref(get_manager()), std::ref(get_context()), 
          std::ref(get_context().get_fparams()), std::ref(m_word_diseq_todo_rel),
-         std::ref(m_word_eq_todo_rel), std::ref(m_not_contains_todo), std::ref(m_conversion_todo)};        expr_ref lengths = len_node_to_z3_formula(dec_proc.get_initial_lengths());
+         std::ref(m_word_eq_todo_rel), std::ref(m_not_contains_todo), std::ref(m_conversion_todo), true};        
+        expr_ref lengths = len_node_to_z3_formula(dec_proc.get_initial_lengths());
         if(check_len_sat(lengths) == l_false) {
             STRACE("str", tout << "Unsat from initial lengths (one symbol)" << std::endl);
             block_curr_len(lengths, true, true);

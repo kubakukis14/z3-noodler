@@ -319,6 +319,8 @@ namespace smt::noodler {
 
          scoped_vector<std::tuple<expr_ref,expr_ref,ConversionType>>& m_conversion_todo;
 
+         bool check_lengths;
+
         const theory_str_noodler_params& m_params;
 
         /**
@@ -433,7 +435,8 @@ namespace smt::noodler {
               vector<std::pair<expr_ref, expr_ref>>& m_word_diseq_todo_rel,
               vector<std::pair<expr_ref, expr_ref>>& m_word_eq_todo_rel,
               scoped_vector<std::pair<expr_ref, expr_ref>>& m_not_contains_todo,
-              scoped_vector<std::tuple<expr_ref,expr_ref,ConversionType>>& m_conversion_todo
+              scoped_vector<std::tuple<expr_ref,expr_ref,ConversionType>>& m_conversion_todo,
+              bool check_lengths
         ) : init_length_sensitive_vars(init_length_sensitive_vars),
             formula(formula),
             init_aut_ass(init_aut_ass),
@@ -447,6 +450,7 @@ namespace smt::noodler {
             m_word_eq_todo_rel(m_word_eq_todo_rel),
             m_not_contains_todo(m_not_contains_todo),
             m_conversion_todo(m_conversion_todo),
+            check_lengths(check_lengths),
             m_params(par) {
 
             // if (int_solver == nullptr) {
