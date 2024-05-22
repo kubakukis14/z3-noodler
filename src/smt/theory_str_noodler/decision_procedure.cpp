@@ -143,7 +143,6 @@ namespace smt::noodler {
                            << "------------------------" << std::endl;);
 
 
-        expr_ref *unsat_core = nullptr;
         while (!worklist.empty()) {
 
 
@@ -151,18 +150,21 @@ namespace smt::noodler {
             worklist.pop_front();
 
             if (check_lengths) {
+                int_expr_solver ie_expr(manager, fparams);
+                bool include_ass = true;
+                if(this->m_word_diseq_todo_rel.size() == 0 && this->m_word_eq_todo_rel.size() == 0 && this->m_not_contains_todo.size() == 0 && this->m_conversion_todo.size() == 0) {
+                    include_ass = false;
+                }
+
+                ie_expr.initialize(ctx, include_ass);
+
                 auto [noodler_lengths, precision] = get_node_lengths(element_to_process);
                 auto lengths = len_node_to_z3_formula_swag(noodler_lengths);
                 lbool is_lengths_sat;
                 if (lengths != manager.mk_true()) {
-                    is_lengths_sat = int_solver.check_sat(lengths);
+                    is_lengths_sat = ie_expr.check_sat(lengths);
                     if (is_lengths_sat == l_false) {
                         STRACE("str", tout << "Node lengths unsat" << std::endl;);
-                        if(unsat_core != nullptr) {
-                            for(unsigned i=0;i<int_solver.m_kernel.get_unsat_core_size();i++){
-                                *unsat_core = manager.mk_and(*unsat_core, int_solver.m_kernel.get_unsat_core_expr(i));
-                            }
-                        }
 
                         return l_true;
                     }

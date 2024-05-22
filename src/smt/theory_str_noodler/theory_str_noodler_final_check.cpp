@@ -228,19 +228,14 @@ namespace smt::noodler {
     lbool theory_str_noodler::solve_underapprox(const Formula& instance, const AutAssignment& aut_assignment,
                                                 const std::unordered_set<BasicTerm>& init_length_sensitive_vars,
                                                 std::vector<TermConversion> conversions) {
-        int_expr_solver ie_expr(get_manager(), get_context().get_fparams());
-        // do we solve only regular constraints? If yes, skip other temporary length constraints (they are not necessary)
-        bool include_ass = true;
-        if(this->m_word_diseq_todo_rel.size() == 0 && this->m_word_eq_todo_rel.size() == 0 && this->m_not_contains_todo.size() == 0 && this->m_conversion_todo.size() == 0) {
-            include_ass = false;
-        }
 
-        ie_expr.initialize(get_context(), include_ass);
         std::tuple<const std::map<smt::noodler::BasicTerm, expr_ref>&, ast_manager&, seq_util&, arith_util&> vars_for_lengths_refs(std::ref(this->var_name),
          std::ref(this->m), std::ref(this->m_util_s), std::ref(this->m_util_a));
 
         DecisionProcedure dec_proc = DecisionProcedure{ instance, aut_assignment, init_length_sensitive_vars, m_params, 
-         conversions, ie_expr, vars_for_lengths_refs, std::ref(get_manager()), false};
+         conversions, vars_for_lengths_refs, std::ref(get_manager()), std::ref(get_context()), 
+         std::ref(get_context().get_fparams()), std::ref(m_word_diseq_todo_rel),
+         std::ref(m_word_eq_todo_rel), std::ref(m_not_contains_todo), std::ref(m_conversion_todo), false};
 
         if (dec_proc.preprocess(PreprocessType::UNDERAPPROX, this->var_eqs.get_equivalence_bt()) == l_false) {
             return l_false;
@@ -597,17 +592,11 @@ namespace smt::noodler {
                                 const std::unordered_set<BasicTerm>& init_length_sensitive_vars,
                                 std::vector<TermConversion> conversions) {
 
-        int_expr_solver ie_expr(get_manager(), get_context().get_fparams());
-        // do we solve only regular constraints? If yes, skip other temporary length constraints (they are not necessary)
-        bool include_ass = true;
-        if(this->m_word_diseq_todo_rel.size() == 0 && this->m_word_eq_todo_rel.size() == 0 && this->m_not_contains_todo.size() == 0 && this->m_conversion_todo.size() == 0) {
-            include_ass = false;
-        }
-
-        ie_expr.initialize(get_context(), include_ass);
         std::tuple<const std::map<smt::noodler::BasicTerm, expr_ref>&, ast_manager&, seq_util&, arith_util&> vars_for_lengths_refs(std::ref(this->var_name), std::ref(this->m), std::ref(this->m_util_s), std::ref(this->m_util_a));
         DecisionProcedure dec_proc = DecisionProcedure{ instance, aut_ass, init_length_sensitive_vars, m_params, 
-         conversions, ie_expr, vars_for_lengths_refs, std::ref(get_manager()), true};        
+         conversions, vars_for_lengths_refs, std::ref(get_manager()), std::ref(get_context()), 
+         std::ref(get_context().get_fparams()), std::ref(m_word_diseq_todo_rel),
+         std::ref(m_word_eq_todo_rel), std::ref(m_not_contains_todo), std::ref(m_conversion_todo), true};
         expr_ref lengths = len_node_to_z3_formula(dec_proc.get_initial_lengths());
         if(check_len_sat(lengths) == l_false) {
             STRACE("str", tout << "Unsat from initial lengths (one symbol)" << std::endl);
