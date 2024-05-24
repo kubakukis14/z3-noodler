@@ -866,7 +866,7 @@ namespace smt::noodler {
         DecisionProcedure dec_proc = DecisionProcedure{ instance, aut_assignment, init_length_sensitive_vars, m_params, 
          conversions, vars_for_lengths_refs, std::ref(get_manager()), std::ref(get_context()), 
          std::ref(get_context().get_fparams()), std::ref(m_word_diseq_todo_rel),
-         std::ref(m_word_eq_todo_rel), std::ref(m_not_contains_todo), std::ref(m_conversion_todo), true};
+         std::ref(m_word_eq_todo_rel), std::ref(m_not_contains_todo), std::ref(m_conversion_todo)};
 
         STRACE("str", tout << "Starting preprocessing" << std::endl);
         lbool result = dec_proc.preprocess(PreprocessType::PLAIN, this->var_eqs.get_equivalence_bt());

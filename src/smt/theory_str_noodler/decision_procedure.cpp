@@ -149,22 +149,20 @@ namespace smt::noodler {
             SolvingState element_to_process = std::move(worklist.front());
             worklist.pop_front();
 
-            if (check_lengths) {
-                auto [noodler_lengths, precision] = get_node_lengths(element_to_process);
-                auto lengths = len_node_to_z3_formula_swag(noodler_lengths);
-                if (lengths != manager.mk_true()) {
-                    int_expr_solver ie_expr(manager, fparams);
-                    bool include_ass = true;
-                    if(this->m_word_diseq_todo_rel.size() == 0 && this->m_word_eq_todo_rel.size() == 0 && this->m_not_contains_todo.size() == 0 && this->m_conversion_todo.size() == 0) {
-                        include_ass = false;
-                    }
+            auto [noodler_lengths, precision] = get_node_lengths(element_to_process);
+            auto lengths = len_node_to_z3_formula_swag(noodler_lengths);
+            if (lengths != manager.mk_true()) {
+                int_expr_solver ie_expr(manager, fparams);
+                bool include_ass = true;
+                if(this->m_word_diseq_todo_rel.size() == 0 && this->m_word_eq_todo_rel.size() == 0 && this->m_not_contains_todo.size() == 0 && this->m_conversion_todo.size() == 0) {
+                    include_ass = false;
+                }
 
-                    ie_expr.initialize(ctx, include_ass);
-                    if (ie_expr.check_sat(lengths) == l_false) {
-                        STRACE("str", tout << "Node lengths unsat" << std::endl;);
-
-                        return l_true;
-                    }
+                ie_expr.initialize(ctx, include_ass);
+                if (ie_expr.check_sat(lengths) == l_false) {
+                    STRACE("str", tout << "Node lengths unsat" << std::endl;);
+                    this->solution = std::move(element_to_process);
+                    return l_true;
                 }
             }
 
