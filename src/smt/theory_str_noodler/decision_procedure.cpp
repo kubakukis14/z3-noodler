@@ -159,6 +159,8 @@ namespace smt::noodler {
                             tout << " " << subst_var;
                         }
                         tout << std::endl;
+                        //
+                        //
                     }
                     for (const auto& var_aut : solution.aut_ass) {
                         tout << "    " << var_aut.first << " -> NFA" << std::endl;
