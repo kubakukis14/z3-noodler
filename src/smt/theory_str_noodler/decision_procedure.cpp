@@ -872,9 +872,9 @@ namespace smt::noodler {
         solut.flatten_substition_map();
 
         // add formula for conversions
-        auto conv_form_with_precision = get_formula_for_conversions();
-        conjunctions.push_back(conv_form_with_precision.first);
-        precision = conv_form_with_precision.second;
+        // auto conv_form_with_precision = get_formula_for_conversions();
+        // conjunctions.push_back(conv_form_with_precision.first);
+        // precision = conv_form_with_precision.second;
 
         return {LenNode(LenFormulaType::AND, conjunctions), precision};
     }
